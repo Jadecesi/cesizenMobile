@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
+import 'contenu_page.dart';
+import '../theme/app_colors.dart';
 
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF4CAF50);
-    const secondaryColor = Color(0xFF81C784);
-    const accentColor = Color(0xFFFFC107);
-    const accentColorSecondary = Color(0xFFC49403);
-    const neutralColor = Color(0xFFF5F5F5);
-    const textColor = Color(0xFF333333);
-
     return Scaffold(
-      backgroundColor: neutralColor,
+      backgroundColor: AppColors.neutralColor,
       appBar: AppBar(
         title: Text(
           'Bienvenue sur CESIZen',
-          style: TextStyle(color: neutralColor, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.neutralColor,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        backgroundColor: primaryColor,
+        backgroundColor: AppColors.primaryColor,
         centerTitle: true,
       ),
       body: Padding(
@@ -33,14 +31,18 @@ class HomePage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: primaryColor,
+                    color: AppColors.primaryColor,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 16),
                 Text(
                   'Découvrez des outils simples et efficaces pour mieux gérer votre stress et prendre soin de votre santé mentale. Suivez vos émotions, pratiquez des exercices de respiration et explorez des activités détente pour un quotidien équilibré.',
-                  style: TextStyle(fontSize: 16, color: textColor, height: 1.6),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textColor,
+                    height: 1.6,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 32),
@@ -52,7 +54,7 @@ class HomePage extends StatelessWidget {
                     ElevatedButton(
                       onPressed: () {},
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
+                        backgroundColor: AppColors.primaryColor,
                         foregroundColor: Colors.black,
                         padding: EdgeInsets.symmetric(
                           horizontal: 24,
@@ -64,13 +66,22 @@ class HomePage extends StatelessWidget {
                       ),
                       child: Text(
                         'Commencer',
-                        style: TextStyle(color: neutralColor),
+                        style: TextStyle(color: AppColors.neutralColor),
                       ),
                     ),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ContenusPage(),
+                          ),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: accentColor,
+                        backgroundColor: Color(
+                          0xFFFFC107,
+                        ), // bouton jaune/orangé
                         foregroundColor: Colors.black,
                         padding: EdgeInsets.symmetric(
                           horizontal: 24,
@@ -80,10 +91,7 @@ class HomePage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: Text(
-                        'En savoir plus',
-                        style: TextStyle(color: neutralColor),
-                      ),
+                      child: const Text('En savoir plus'),
                     ),
                   ],
                 ),
