@@ -9,6 +9,8 @@ import '../models/Utilisateur.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/api_service.dart';
 import 'dashboard_user_page.dart';
+import 'profile_page.dart';
+import 'dashboard_admin_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -93,12 +95,23 @@ class _HomePageState extends State<HomePage> {
                 value: 'dashboard',
                 child: Row(
                   children: [
-                    Icon(Icons.dashboard, color: AppColors.textColor),
+                    Icon(Icons.space_dashboard, color: AppColors.textColor),
                     SizedBox(width: 8),
                     Text('Tableau de bord'),
                   ],
                 ),
               ),
+              if (_currentUser?.role.nom == 'ROLE_ADMIN')
+                const PopupMenuItem<String>(
+                  value: 'listeDiagnostics',
+                  child: Row(
+                    children: [
+                      Icon(Icons.format_list_bulleted_rounded, color: AppColors.textColor),
+                      SizedBox(width: 8),
+                      Text('Diagnostics'),
+                    ],
+                  ),
+                ),
               const PopupMenuDivider(),
               const PopupMenuItem<String>(
                 value: 'logout',
@@ -114,15 +127,29 @@ class _HomePageState extends State<HomePage> {
             onSelected: (String value) async {
               switch (value) {
                 case 'profile':
-                // Navigation vers le profil
-                  break;
-                case 'dashboard':
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const DashboardUserPage(),
+                      builder: (context) => const ProfilePage(),
                     ),
                   );
+                  break;
+                case 'dashboard':
+                  if (_currentUser?.role.nom == 'ROLE_ADMIN') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DashboardAdminPage(),
+                      ),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DashboardUserPage(),
+                      ),
+                    );
+                  }
                   break;
                 case 'logout':
                   await ApiService.logout();
@@ -135,6 +162,16 @@ class _HomePageState extends State<HomePage> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => const AuthPage()),
+                    );
+                  }
+                  break;
+                  case 'listeDiagnostics':
+                  if (_currentUser?.role.nom == 'ROLE_ADMIN') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DashboardUserPage(),
+                      ),
                     );
                   }
                   break;

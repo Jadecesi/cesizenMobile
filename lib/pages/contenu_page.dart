@@ -58,7 +58,13 @@ class _ContenusPageState extends State<ContenusPage> {
     return Scaffold(
       backgroundColor: AppColors.neutralColor,
       appBar: AppBar(
-        title: const Text("Articles et contenus"),
+        title: Text(
+          'Articles et contenus',
+          style: TextStyle(
+            color: AppColors.neutralColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: AppColors.primaryColor,
         centerTitle: true,
         actions: [

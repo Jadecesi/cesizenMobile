@@ -1,13 +1,38 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/Diagnostic.dart';
-import '../models/Event.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import 'new_diagnostic.dart';
 import 'package:intl/intl.dart';
 
-class DashboardUserPage extends StatelessWidget {
+class DashboardUserPage extends StatefulWidget {
   const DashboardUserPage({super.key});
+
+  @override
+  State<DashboardUserPage> createState() => _DashboardUserPageState();
+}
+
+class _DashboardUserPageState extends State<DashboardUserPage> {
+  late Future<List<Diagnostic>> _diagnosticsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _diagnosticsFuture = _loadDiagnostics();
+  }
+
+  Future<List<Diagnostic>> _loadDiagnostics() {
+    return ApiService.fetchUserDiagnostics();
+  }
+
+  Future<void> _refreshDiagnostics() async {
+    setState(() {
+      _diagnosticsFuture = _loadDiagnostics();
+    });
+  }
 
   Widget _buildDiagnosticCard(BuildContext context, Diagnostic diagnostic) {
     return Card(
@@ -61,17 +86,74 @@ class DashboardUserPage extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(
-                  _getRiskIcon(diagnostic.totalStress?.toInt() ?? 0),
-                  color: _getStressColor(diagnostic.totalStress?.toInt() ?? 0),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _getCommentaire(diagnostic.totalStress?.toInt() ?? 0),
-                  style: TextStyle(
-                    color: _getStressColor(diagnostic.totalStress?.toInt() ?? 0),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(
+                        _getRiskIcon(diagnostic.totalStress?.toInt() ?? 0),
+                        color: _getStressColor(diagnostic.totalStress?.toInt() ?? 0),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _getCommentaire(diagnostic.totalStress?.toInt() ?? 0),
+                        style: TextStyle(
+                          color: _getStressColor(diagnostic.totalStress?.toInt() ?? 0),
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () async {
+                    try {
+                      final prefs = await SharedPreferences.getInstance();
+                      final userJson = prefs.getString('current_user');
+                      if (userJson != null) {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Confirmation'),
+                            content: RichText(
+                              text: const TextSpan(
+                                style: TextStyle(color: Colors.black),
+                                children: [
+                                  TextSpan(text: 'Voulez-vous vraiment supprimer votre diagnostic ?\n\n'),
+                                ],
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Annuler'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed == true) {
+                          final success = await ApiService.deleteDiagnostic(diagnostic.id!);
+                          if (success && mounted) {
+                            _refreshDiagnostics();
+                          }
+                        }
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(e.toString()),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
                 ),
               ],
             ),
@@ -115,41 +197,64 @@ class DashboardUserPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historique des diagnostics'),
+        title: Text(
+          'Historique des diagnostics',
+          style: TextStyle(
+            color: AppColors.neutralColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NewDiagnosticPage()),
+              ).then((_) => _refreshDiagnostics());
+            },
+            icon: const Icon(Icons.add),
+            color: AppColors.accentColor,
+          ),
+        ],
         backgroundColor: AppColors.primaryColor,
       ),
-      body: FutureBuilder<List<Diagnostic>>(
-        future: ApiService.fetchUserDiagnostics(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: RefreshIndicator(
+        onRefresh: _refreshDiagnostics,
+        color: AppColors.primaryColor,
+        child: FutureBuilder<List<Diagnostic>>(
+          future: _diagnosticsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Erreur: ${snapshot.error}'));
-          }
+            if (snapshot.hasError) {
+              return Center(child: Text('Erreur: ${snapshot.error}'));
+            }
 
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Aucun diagnostic disponible'));
-          }
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: const [
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text('Aucun diagnostic disponible'),
+                    ),
+                  ),
+                ],
+              );
+            }
 
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) =>
-                _buildDiagnosticCard(context, snapshot.data![index]),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const NewDiagnosticPage()),
-          );
-        },
-        backgroundColor: AppColors.accentColor,
-        child: const Icon(Icons.add),
+            return ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: snapshot.data!.length,
+              itemBuilder: (context, index) =>
+                  _buildDiagnosticCard(context, snapshot.data![index]),
+            );
+          },
+        ),
       ),
     );
   }

@@ -2,20 +2,20 @@ import 'package:cesizen_mobile/models/Diagnostic.dart';
 import 'package:cesizen_mobile/models/Role.dart';
 import 'package:cesizen_mobile/models/Contenu.dart';
 
-
 class Utilisateur {
   final int id;
   final String email;
-  final Role role;  // Changé de List<Role> à Role
-  final List<Diagnostic>? diagnostics;  // Changé de 'diagnostic' à 'diagnostics' pour correspondre à la réponse JSON
+  final Role role;
+  final List<Diagnostic>? diagnostics;
   final String nom;
   final String prenom;
   final DateTime dateNaissance;
   final String? username;
-  final String? photProfil;  // Changé pour correspondre à 'photoProfile' dans la réponse
-  final List<Contenu>? contenus;  // Changé de 'contenu' à 'contenus' pour correspondre à la réponse JSON
+  final String? photProfil;
+  final List<Contenu>? contenus;
   final String? apiToken;
   final DateTime? tokenExpiresAt;
+  final bool isActif;
 
   Utilisateur({
     required this.id,
@@ -30,6 +30,7 @@ class Utilisateur {
     this.contenus,
     this.apiToken,
     this.tokenExpiresAt,
+    required this.isActif
   });
 
   factory Utilisateur.fromJson(Map<String, dynamic> json) {
@@ -56,6 +57,7 @@ class Utilisateur {
       tokenExpiresAt: json['tokenExpiresAt'] != null
           ? DateTime.parse(json['tokenExpiresAt'])
           : null,
+      isActif: json['isActif'] as bool? ?? true,
     );
   }
 
@@ -72,7 +74,7 @@ class Utilisateur {
     'photoProfile': photProfil,
     if (contenus != null) 'contenus': contenus?.map((c) => c.toJson()).toList(),
     if (apiToken != null) 'apiToken': apiToken,
-    if (tokenExpiresAt != null)
-      'tokenExpiresAt': tokenExpiresAt?.toIso8601String(),
+    if (tokenExpiresAt != null) 'tokenExpiresAt': tokenExpiresAt?.toIso8601String(),
+    if (tokenExpiresAt != null) 'isActif': isActif,
   };
 }

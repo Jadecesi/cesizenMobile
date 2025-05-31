@@ -35,7 +35,13 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
     return Scaffold(
       backgroundColor: AppColors.neutralColor,
       appBar: AppBar(
-        title: const Text("Diagnostic"),
+        title: Text(
+          'Diagnostic',
+          style: TextStyle(
+            color: AppColors.neutralColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: AppColors.primaryColor,
         centerTitle: true,
       ),
