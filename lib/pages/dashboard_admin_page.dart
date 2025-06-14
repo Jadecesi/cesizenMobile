@@ -62,10 +62,18 @@ class _DashboardAdminPageState extends State<DashboardAdminPage> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
+            ElevatedButton.icon(
               icon: Icon(
                 utilisateur.isActif ? Icons.block : Icons.check_circle_outline,
-                color: AppColors.accentColor,
+                size: 20,
+              ),
+              label: Text(
+                utilisateur.isActif ? 'Désactiver' : 'Activer',
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: utilisateur.isActif ? Colors.red : Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
               onPressed: () async {
                 try {

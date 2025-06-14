@@ -1,32 +1,31 @@
-// lib/models/event.dart
-import 'package:cesizen_mobile/models/Reponse.dart';
+import 'Diagnostic.dart';
 
 class Event {
-  final int id;
-  final String nom;
-  final int stress;
-  final List<Reponse> reponses;
+  int id;
+  String nom;
+  int stress;
+  List<Diagnostic> diagnostics;
 
   Event({
     required this.id,
     required this.nom,
-    required this.stress,
-    required this.reponses,
-  });
+    this.stress = 0,  // Valeur par défaut
+    List<Diagnostic>? diagnostics,
+  }) : diagnostics = diagnostics ?? [];
 
-  factory Event.fromJson(Map<String, dynamic> json) => Event(
-    id: json['id'] as int,
-    nom: json['nom'] as String,
-    stress: json['stress'] as int,
-    reponses: (json['reponses'] as List<dynamic>?)
-        ?.map((e) => Reponse.fromJson(e as Map<String, dynamic>))
-        .toList() ?? [],
-  );
+  factory Event.fromJson(Map<String, dynamic> json) {
+    return Event(
+      id: json['id'] as int? ?? 0,
+      nom: json['nom'] as String? ?? '',
+      stress: json['stress'] as int? ?? 0,  // Gestion de la valeur nulle
+      diagnostics: [],
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'nom': nom,
     'stress': stress,
-    'reponses': reponses.map((r) => r.toJson()).toList(),
+    'diagnostics': diagnostics.map((d) => d.toJson()).toList(),
   };
 }

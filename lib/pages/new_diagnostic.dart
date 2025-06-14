@@ -1,4 +1,7 @@
+import 'package:cesizen_mobile/pages/result_page.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/Diagnostic.dart';
 import '../models/Event.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
@@ -186,8 +189,15 @@ class _NewDiagnosticPageState extends State<NewDiagnosticPage> {
                                 _selectedEvents.containsKey(event.id))
                                 .toList();
 
-                            await ApiService.createDiagnostic(
-                                selectedEventsList);
+                            final prefs = await SharedPreferences.getInstance();
+                            final userJson = prefs.getString('current_user');
+
+                            Diagnostic diagnostic;
+                            if (userJson != null) {
+                              diagnostic = await ApiService.createDiagnostic(selectedEventsList);
+                            } else {
+                              diagnostic = await ApiService.createLocalDiagnostic(selectedEventsList);
+                            }
 
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -196,7 +206,14 @@ class _NewDiagnosticPageState extends State<NewDiagnosticPage> {
                                       'Diagnostic enregistré avec succès'),
                                 ),
                               );
-                              Navigator.pop(context);
+                              if (userJson == null) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ResultPage(diagnostic: diagnostic),
+                                  ),
+                                );
+                              }
                             }
                           } catch (e) {
                             if (mounted) {

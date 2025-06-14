@@ -38,24 +38,26 @@ class Utilisateur {
       id: json['id'] as int,
       email: json['email'] as String,
       role: Role.fromJson(json['role'] as Map<String, dynamic>),
-      diagnostics: json['diagnostics'] != null
-          ? (json['diagnostics'] as List<dynamic>)
-          .map((e) => Diagnostic.fromJson(e as Map<String, dynamic>))
+      diagnostics: (json['diagnostics'] != null && json['diagnostics'] is List)
+          ? (json['diagnostics'] as List)
+          .whereType<Map<String, dynamic>>()
+          .map((item) => Diagnostic.fromJson(item))
           .toList()
-          : null,
+          : [],
       nom: json['nom'] as String,
       prenom: json['prenom'] as String,
-      dateNaissance: DateTime.parse(json['dateNaissance']),
+      dateNaissance: DateTime.parse(json['dateNaissance'] as String),
       username: json['username'] as String?,
       photProfil: json['photoProfile'] as String?,
-      contenus: json['contenus'] != null
-          ? (json['contenus'] as List<dynamic>)
-          .map((e) => Contenu.fromJson(e as Map<String, dynamic>))
+      contenus: (json['contenus'] != null && json['contenus'] is List)
+          ? (json['contenus'] as List)
+          .whereType<Map<String, dynamic>>()
+          .map((item) => Contenu.fromJson(item))
           .toList()
-          : null,
+          : [],
       apiToken: json['apiToken'] as String?,
       tokenExpiresAt: json['tokenExpiresAt'] != null
-          ? DateTime.parse(json['tokenExpiresAt'])
+          ? DateTime.parse(json['tokenExpiresAt'] as String)
           : null,
       isActif: json['isActif'] as bool? ?? true,
     );

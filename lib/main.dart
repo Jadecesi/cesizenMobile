@@ -6,13 +6,13 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key}); // ✅ propre aussi ici
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'CESIZen',
-      home: HomePage(), // ✅ usage constant
+      home: HomePage(),
       debugShowCheckedModeBanner: false,
     );
   }

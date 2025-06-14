@@ -77,12 +77,10 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: diagnostic.reponses?.expand((reponse) {
-                return reponse.events.map((event) => Chip(
-                  label: Text(event.nom),
-                  backgroundColor: Colors.grey[200],
-                ));
-              }).toList() ?? [],
+              children: diagnostic.events?.map((event) => Chip(
+                label: Text(event.nom),
+                backgroundColor: Colors.grey[200],
+              )).toList() ?? [],
             ),
             const SizedBox(height: 12),
             Row(
@@ -198,7 +196,7 @@ class _DashboardUserPageState extends State<DashboardUserPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Historique des diagnostics',
+          'Historiques',
           style: TextStyle(
             color: AppColors.neutralColor,
             fontWeight: FontWeight.bold,

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import '../models/Diagnostic.dart';
 import '../models/Event.dart';
-import '../models/Reponse.dart';
 import '../models/Utilisateur.dart';
 import 'package:http/http.dart' as http;
 import '../models/contenu.dart';
@@ -11,7 +10,7 @@ import '../exceptions/ApiException.dart';
 
 class ApiService {
   static const _storage = FlutterSecureStorage();
-  static const String _baseUrl = 'http://192.168.1.53:8000';
+  static const String _baseUrl = 'https://18fa-2a01-cb05-80c6-1100-4c70-7130-39bc-e0af.ngrok-free.app';
 
   static Future<void> _storeToken(String token) async {
     await _storage.write(key: 'api_token', value: token);
@@ -90,14 +89,18 @@ class ApiService {
 
   static Future<Utilisateur> login(String email, String password) async {
     try {
+      print('Début de la requête login...');
       final response = await http.post(
         Uri.parse('$_baseUrl/api/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
 
-      // Décoder la réponse JSON quelle que soit la réponse
+      print('Statut de la réponse: ${response.statusCode}');
+      print('Corps de la réponse: ${response.body}');
+
       final Map<String, dynamic> data = jsonDecode(response.body);
+      print('Réponse décodée de l\'API: $data');
 
       if (response.statusCode == 200) {
         if (data.containsKey('id')) {
@@ -110,16 +113,20 @@ class ApiService {
             await prefs.setString('current_user', jsonEncode(data));
             return user;
           } else {
+            print('Erreur : Token manquant dans la réponse\nDonnées: $data');
             throw ApiException('Token manquant dans la réponse');
           }
         } else {
+          print('Erreur : ID utilisateur manquant dans la réponse\nDonnées: $data');
           throw ApiException('ID utilisateur manquant dans la réponse');
         }
       } else {
         final errorMessage = data['error'] ?? 'Erreur inconnue';
+        print('Erreur HTTP: ${response.statusCode} - $errorMessage');
         throw ApiException(errorMessage);
       }
     } catch (e) {
+      print('Exception attrapée dans login: $e');
       if (e is ApiException) {
         rethrow;
       }
@@ -161,19 +168,6 @@ class ApiService {
   Future<void> _removeToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('api_token');
-  }
-
-  static Future<Reponse> fecthReponseById(int id) async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/api/reponses/$id'),
-      headers: {'Accept': 'application/json'},
-    );
-
-    if (response.statusCode == 200) {
-      return Reponse.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Erreur lors du chargement de la réponse');
-    }
   }
 
   static Future<List<Event>> fetchEvents() async {
@@ -256,9 +250,9 @@ class ApiService {
               ? DateTime.parse(responseData['dateCreation'] as String)
               : null,
           utilisateur: responseData['utilisateur'] as Map<String, dynamic>?,
-          reponses: responseData['reponses'] != null
-              ? (responseData['reponses'] as List)
-              .map((r) => Reponse.fromJson(r as Map<String, dynamic>))
+          events: responseData['events'] != null
+              ? (responseData['events'] as List)
+              .map((e) => Event.fromJson(e))
               .toList()
               : [],
         );
@@ -272,10 +266,14 @@ class ApiService {
 
   static Future<List<Diagnostic>> fetchUserDiagnostics() async {
     try {
+      print('Début de fetchUserDiagnostics...');
       final prefs = await SharedPreferences.getInstance();
       final userJson = prefs.getString('current_user');
+      print('Current user JSON: $userJson');
+
       final userData = jsonDecode(userJson!);
       final userId = userData['id'];
+      print('User ID: $userId');
 
       final response = await http.get(
         Uri.parse('$_baseUrl/api/diagnostic/user/$userId'),
@@ -285,15 +283,21 @@ class ApiService {
         },
       );
 
+      print('Status de la réponse: ${response.statusCode}');
+      print('Corps de la réponse: ${response.body}');
+
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
+        print('Données décodées: $data');
         return data.map((json) => Diagnostic.fromJson(json)).toList();
       } else if (response.statusCode == 404) {
+        print('404 - Aucun diagnostic trouvé');
         return [];
       } else {
         throw Exception('Erreur HTTP: ${response.statusCode}');
       }
     } catch (e, stackTrace) {
+      print('Exception dans fetchUserDiagnostics: $e');
       throw Exception('Erreur lors de la récupération des diagnostics: $e');
     }
   }
@@ -448,5 +452,74 @@ class ApiService {
       }
       throw ApiException('Erreur de connexion: ${e.toString()}');
     }
+  }
+
+  static Future<Contenu> editContenu(int idContenu, String token, String titre, String description, String url) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$_baseUrl/api/contenu/$idContenu/edit'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'titre': titre,
+          'description': description,
+          'url': url
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return Contenu.fromJson(data);
+      } else {
+        final errorMessage = data['error'] ?? 'Erreur inconnue';
+        throw ApiException(errorMessage);
+      }
+    } catch (e) {
+      if (e is ApiException) {
+        rethrow;
+      }
+      throw ApiException('Erreur de modification du contenu: ${e.toString()}');
+    }
+  }
+
+  static Future<bool> deleteContenu(int contenuId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/api/contenu/$contenuId/delete'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${await _storage.read(key: 'api_token')}',
+        },
+      );
+
+      final data = jsonDecode(response.body);
+
+      print('retourn json suppresion contenu: $data');
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        throw ApiException(data['error'] ?? 'Une erreur est survenue');;
+      }
+    } catch (e) {
+      if (e is ApiException) {
+        rethrow;
+      }
+      throw ApiException('Erreur lors de la suppression du diagnostic : ${e.toString()}');
+    }
+  }
+
+  static Future<Diagnostic> createLocalDiagnostic(List<Event> selectedEvents) async {
+    final totalStress = selectedEvents.fold<double>(0, (sum, e) => sum + e.stress);
+    return Diagnostic(
+      id: 0, // 0 ou null pour indiquer que ce n'est pas en base
+      totalStress: totalStress,
+      dateCreation: DateTime.now(),
+      utilisateur: null,
+      events: selectedEvents,
+    );
   }
 }
